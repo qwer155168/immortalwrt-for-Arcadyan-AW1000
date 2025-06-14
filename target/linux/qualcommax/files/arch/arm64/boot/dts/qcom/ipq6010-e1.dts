@@ -100,6 +100,28 @@
 		enable-active-high;
 		regulator-always-on;
 	};
+
+	vcc_fan: regulator-vcc-fan {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc_fan";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&tlmm 29 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-boot-on;
+	};
+
+	pwm-fan {
+		compatible = "pwm-fan";
+		pwms = <&pwm 1 40000 0>;
+		fan-supply = <&vcc_fan>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <31 IRQ_TYPE_EDGE_RISING>;
+		cooling-levels = <64 128 192 255>;
+		cooling-min-state = <0>;
+		cooling-max-state = <3>;
+		#cooling-cells = <2>;
+	};
 };
 
 &tlmm {
