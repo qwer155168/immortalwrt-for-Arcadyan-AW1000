@@ -49,7 +49,7 @@
 		reset-gpios = <&tlmm 24 GPIO_ACTIVE_LOW>;
 	};
 
-	switch1: ethernet-switch@17 {
+	qca8337: ethernet-switch@17 {
 		ports {
 			#address-cells = <1>;
 			#size-cells = <0>;

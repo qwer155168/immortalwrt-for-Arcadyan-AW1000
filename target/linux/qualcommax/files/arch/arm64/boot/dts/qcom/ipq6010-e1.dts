@@ -38,15 +38,15 @@
 	keys {
 		compatible = "gpio-keys";
 
-		mount {
-			label = "mount";
-			linux,code = <BTN_0>;
-			gpios = <&tlmm 70 GPIO_ACTIVE_LOW>;
-		};
-
 		wps {
 			label = "wps";
 			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&tlmm 70 GPIO_ACTIVE_LOW>;
+		};
+
+		eject {
+			label = "eject";
+			linux,code = <BTN_0>;
 			gpios = <&tlmm 71 GPIO_ACTIVE_LOW>;
 		};
 
@@ -91,6 +91,56 @@
 		};
 	};
 
+	fan: pwm-fan {
+		compatible = "pwm-fan";
+		pwms = <&pwm 1 40000 0>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <31 IRQ_TYPE_EDGE_RISING>;
+		cooling-levels = <64 128 192 255>;
+		#cooling-cells = <2>;
+	};
+
+	thermal-zones {
+		cpu-thermal {
+			trips {
+				cpu_trip_high: active-high {
+					temperature = <100000>;
+					hysteresis = <2000>;
+					type = "active";
+				};
+
+				cpu_trip_med: active-med {
+					temperature = <75000>;
+					hysteresis = <2000>;
+					type = "active";
+				};
+
+				cpu_trip_low: active-low {
+					temperature = <50000>;
+					hysteresis = <2000>;
+					type = "active";
+				};
+			};
+
+			cooling-maps {
+				cpu-active-high {
+					cooling-device = <&fan 3 3>;
+					trip = <&cpu_trip_high>;
+				};
+
+				cpu-active-med {
+					cooling-device = <&fan 2 2>;
+					trip = <&cpu_trip_med>;
+				};
+
+				cpu-active-low {
+					cooling-device = <&fan 1 1>;
+					trip = <&cpu_trip_low>;
+				};
+			};
+		};
+	};
+
 	vcc_sd: regulator-vcc-sd {
 		compatible = "regulator-fixed";
 		regulator-name = "vcc_sd";
@@ -125,6 +175,12 @@
 };
 
 &tlmm {
+	beep_pins: beep-pins {
+		pins = "gpio24";
+		function = "pwm22";
+		drive-strength = <8>;
+	};
+
 	btcoex_pins: btcoex-pins {
 		mux_0 {
 			pins = "gpio51";
@@ -156,17 +212,9 @@
 	};
 
 	pwm_pins: pwm-pins {
-		mux_1 {
-			pins = "gpio24";
-			function = "pwm22";
-			drive-strength = <8>;
-		};
-
-		mux_2 {
-			pins = "gpio25";
-			function = "pwm32";
-			drive-strength = <8>;
-		};
+		pins = "gpio25";
+		function = "pwm32";
+		drive-strength = <8>;
 	};
 
 	sata_pins: sata-pins {
@@ -223,7 +271,6 @@
 	cd-gpios = <&tlmm 62 GPIO_ACTIVE_LOW>;
 	vqmmc-supply = <&vcc_sd>;
 	bus-width = <4>;
-	mmc-ddr-1_8v;
 };
 
 &blsp1_spi1 {
@@ -319,20 +366,6 @@
 			partition@660000 {
 				label = "0:ART";
 				reg = <0x00660000 0x00080000>;
-
-				nvmem-layout {
-					compatible = "fixed-layout";
-					#address-cells = <1>;
-					#size-cells = <1>;
-
-					macaddr_lan: macaddr@12 {
-						reg = <0x12 0x06>;
-					};
-
-					macaddr_wan: macaddr@18 {
-						reg = <0x18 0x06>;
-					};
-				};
 			};
 
 			partition@6e0000 {
@@ -472,36 +505,24 @@
 	status = "okay";
 	phy-handle = <&qca8075_1>;
 	label = "lan1";
-
-	nvmem-cells = <&macaddr_lan>;
-	nvmem-cell-names = "mac-address";
 };
 
 &dp3 {
 	status = "okay";
 	phy-handle = <&qca8075_2>;
 	label = "lan2";
-
-	nvmem-cells = <&macaddr_lan>;
-	nvmem-cell-names = "mac-address";
 };
 
 &dp4 {
 	status = "okay";
 	phy-handle = <&qca8075_3>;
 	label = "lan3";
-
-	nvmem-cells = <&macaddr_lan>;
-	nvmem-cell-names = "mac-address";
 };
 
 &dp5 {
 	status = "okay";
 	phy-handle = <&qca8081>;
 	label = "wan";
-
-	nvmem-cells = <&macaddr_wan>;
-	nvmem-cell-names = "mac-address";
 };
 
 &edma {
